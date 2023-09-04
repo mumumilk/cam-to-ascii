@@ -11,8 +11,9 @@
       }
       #textEl {
         font-family: monospace;
+        white-space: pre-wrap;
         font-size: 1rem;
-        width: 64ch;
+        color: white;
       }
     </style>
   </head>
@@ -38,12 +39,12 @@
       willReadFrequently: true,
     });
     var canvasInterval = null;
-    var fps = 60;
+    var fps = 30;
 
     navigator.mediaDevices
       .getUserMedia({
         audio: false,
-        video: { width: 10, height: 10 },
+        video: { width: 960, height: 540 },
       })
       .then(playStream);
 
@@ -53,7 +54,7 @@
     }
 
     // @see https://play.ertdfgcvb.xyz/
-    const chartable = "Ñ@#W$9876543210?!abc;:+=-,._ ";
+    const chartable = " _.,-=+:;cba!?0123456789$W#@Ñ";
 
     function map(number, inMin, inMax, outMin, outMax) {
       return ((number - inMin) * (outMax - outMin)) / (inMax - inMin) + outMin;
@@ -75,10 +76,10 @@
     function drawImage(video) {
       ctx.drawImage(video, 0, 0, canvasEl.width, canvasEl.height);
 
-      textEl.innerHTML = "";
+      textEl.textContent = "";
 
-      for (let i = 0; i < canvasEl.height - 1; i++) {
-        for (let j = 0; j < canvasEl.width - 1; j++) {
+      for (let i = 0; i < canvasEl.height; i++) {
+        for (let j = 0; j < canvasEl.width; j++) {
           let pixel = ctx.getImageData(j, i, 1, 1);
 
           let data = pixel.data;
@@ -93,20 +94,15 @@
           // let grayscale = rgbaToGrayscaleLuminance(r, g, b, a);
           // let grayscale = rgbToGrayscale(r, g, b);
 
-          const spanEl = document.createElement("span");
-          spanEl.style.color = ` rgb(${r}, ${g}, ${b})`;
-
-          spanEl.innerText =
+          textEl.textContent +=
             chartable[Math.ceil(map(grayscale, 0, 255, 0, chartable.length))] ||
             "";
-
-          textEl.append(spanEl);
         }
-        textEl.append(document.createElement("br"));
+        textEl.textContent += "\n";
       }
     }
 
-    window.setInterval(() => {
+    setInterval(() => {
       drawImage(videoEl);
     }, 1000 / fps);
   </script>
