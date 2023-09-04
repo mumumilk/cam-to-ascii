@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ASCII Webcam</title>
+    <style>
+      body {
+        margin: 0;
+        background-color: black;
+      }
+      video {
+        max-width: 100vw;
+        max-height: 100vh;
+      }
+      #pEl {
+        white-space: pre-wrap;
+        font-family: monospace;
+        color: white;
+        font-size: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <video
+      autoplay
+      playsinline
+      webkit-playsinline
+      muted
+      hidden
+      id="videoEl"
+    ></video>
+    <div style="display: flex; align-items: start">
+      <canvas id="canvasEl" width="64px" height="36px" hidden></canvas>
+      <div id="pEl"></div>
+    </div>
+  </body>
+  <script>
+    var videoEl = document.getElementById("videoEl");
+    var canvasEl = document.getElementById("canvasEl");
+    var pEl = document.getElementById("pEl");
+
+    var ctx = canvasEl.getContext("2d", {
+      alpha: false,
+      willReadFrequently: true,
+    });
+    var canvasInterval = null;
+    var fps = 60;
+
+    navigator.mediaDevices
+      .getUserMedia({
+        audio: false,
+        video: { width: 10, height: 10 },
+      })
+      .then(playStream);
+
+    function playStream(stream) {
+      videoEl.srcObject = stream;
+      videoEl.play();
+    }
+
+    const chartable = " _.,-=+:;cba!?0123456789$W#@Ñ";
+
+    function map(number, inMin, inMax, outMin, outMax) {
+      return ((number - inMin) * (outMax - outMin)) / (inMax - inMin) + outMin;
+    }
+
+    function rgbToGrayscale(r, g, b) {
+      return 0.299 * r + 0.587 * g + 0.114 * b;
+    }
+
+    function rgbToGrayscaleAverage(r, g, b) {
+      return (r + g + b) / 3;
+    }
+
+    function rgbaToGrayscaleLuminance(r, g, b, a) {
+      const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+      return luminance * (a / 255);
+    }
+
+    function drawImage(video) {
+      ctx.drawImage(video, 0, 0, canvasEl.width, canvasEl.height);
+
+      pEl.textContent = "";
+
+      for (let i = 0; i < canvasEl.height - 1; i++) {
+        for (let j = 0; j < canvasEl.width - 1; j++) {
+          let pixel = ctx.getImageData(j, i, 1, 1, {
+            willReadFrequently: true,
+          });
+          let data = pixel.data;
+          let r = data[0];
+          let g = data[1];
+          let b = data[2];
+          let a = data[3];
+
+          // let grayscale = rgbaToGrayscaleLuminance(r, g, b, a);
+          // let grayscale = rgbToGrayscale(r, g, b);
+          let grayscale = rgbToGrayscaleAverage(r, g, b);
+
+          pEl.textContent +=
+            chartable[
+              Math.floor(map(grayscale, 0, 255, 0, chartable.length))
+            ] || "";
+        }
+        pEl.textContent += "\n";
+      }
+    }
+
+    window.setInterval(() => {
+      drawImage(videoEl);
+    }, 1000 / fps);
+  </script>
+</html>
